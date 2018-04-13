@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: logging-controller
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: logging-controller
+    spec:
+      serviceAccountName: "logging-controller"
+      containers:
+      - name: logging-controller
+        image: logging-controller:latest
+        imagePullPolicy: IfNotPresent
