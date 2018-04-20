@@ -1,6 +1,5 @@
 .PHONY: all
-all: build fmt vet lint test
-
+all: build fmt
 APP=logging-controller
 
 build-deps:
