@@ -4,5 +4,6 @@ go:
  - master
 
 script:
-  - go get github.com/golang/dep
+  - mkdir -p $(GOPATH)/bin
+  - go get -u github.com/golang/dep/cmd/dep
   - make
