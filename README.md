@@ -2,7 +2,7 @@
 
 An event dispatcher for Kubernetes controllers.
 
-_Note: This is alpha software. Please use with caution._
+__Note: This is alpha software. Please use with caution.__
 
 ### Sample Controller
 
