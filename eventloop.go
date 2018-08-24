@@ -1,6 +1,10 @@
 package kubehandler
 
-import "k8s.io/client-go/tools/cache"
+import (
+	"reflect"
+
+	"k8s.io/client-go/tools/cache"
+)
 
 //EventLoop represents a central EventHandler registry which runs in a loop
 type EventLoop interface {
@@ -28,6 +32,15 @@ func (loop *eventLoop) Register(handler EventHandler) {
 			loop.workqueue.EnqueueAdd(handler.GetName(), event)
 		},
 		UpdateFunc: func(oldEvent, newEvent interface{}) {
+
+			oldVersion, oldOk := resourceVersion(oldEvent)
+			newVersion, newOk := resourceVersion(newEvent)
+
+			if oldOk && newOk && oldVersion == newVersion {
+				// Periodic resync will send update events for all known Object.
+				// Two different versions of the same Object will always have different RVs.
+				return
+			}
 			loop.workqueue.EnqueueUpdate(handler.GetName(), newEvent)
 		},
 		DeleteFunc: func(deletedEvent interface{}) {
@@ -39,4 +52,33 @@ func (loop *eventLoop) Register(handler EventHandler) {
 //NewEventLoop instantiates a workqueue backed EventLoop
 func NewEventLoop(name string) EventLoop {
 	return &eventLoop{workqueue: NewWorkQueue(name)}
+}
+
+func resourceVersion(event interface{}) (string, bool) {
+
+	result, ok := getStringValueByFieldName(event, "ObjectMeta")
+	if !ok {
+		return "", ok
+	}
+	result, ok = getStringValueByFieldName(result, "ResourceVersion")
+	if !ok {
+		return "", ok
+	}
+	return result.(string), true
+}
+
+func getStringValueByFieldName(n interface{}, field_name string) (interface{}, bool) {
+	s := reflect.ValueOf(n)
+	if s.Kind() == reflect.Ptr {
+		s = s.Elem()
+	}
+	if s.Kind() != reflect.Struct {
+		return "", false
+	}
+	f := s.FieldByName(field_name)
+	if !f.IsValid() {
+		return "", false
+	}
+
+	return f.Interface(), true
 }
