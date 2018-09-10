@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Test_resourceVersion(t *testing.T) {
+func TestShouldGetResourceVersionFromK8sObjects(t *testing.T) {
 	var route interface{}
 	route = routev1.Route{ObjectMeta: metav1.ObjectMeta{ResourceVersion: "test"}}
 	assert.NotNil(t, route)

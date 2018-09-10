@@ -67,7 +67,7 @@ func resourceVersion(event interface{}) (string, bool) {
 	return result.(string), true
 }
 
-func getStringValueByFieldName(n interface{}, field_name string) (interface{}, bool) {
+func getStringValueByFieldName(n interface{}, fieldName string) (interface{}, bool) {
 	s := reflect.ValueOf(n)
 	if s.Kind() == reflect.Ptr {
 		s = s.Elem()
@@ -75,7 +75,7 @@ func getStringValueByFieldName(n interface{}, field_name string) (interface{}, b
 	if s.Kind() != reflect.Struct {
 		return "", false
 	}
-	f := s.FieldByName(field_name)
+	f := s.FieldByName(fieldName)
 	if !f.IsValid() {
 		return "", false
 	}
