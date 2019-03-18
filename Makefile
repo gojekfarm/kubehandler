@@ -1,5 +1,5 @@
 .PHONY: all
-all: build-deps fmt vet lint test
+all: build-deps fmt vet lint compile test
 
 ALL_PACKAGES=$(shell go list ./... | grep -v "vendor")
 UNIT_TEST_PACKAGES="."
@@ -25,6 +25,9 @@ lint:
 		echo "==> Linting $$p"; \
 		golint $$p | { grep -vwE "exported (var|function|method|type|const) \S+ should have comment" || true; } \
 	done
+
+compile:
+	go build
 
 test:
 	ENVIRONMENT=test go test $(UNIT_TEST_PACKAGES) -p=1
