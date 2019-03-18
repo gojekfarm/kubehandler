@@ -2,19 +2,13 @@
 all: build fmt
 APP=logging-controller
 
-build-deps:
-	dep ensure
-
-update-deps:
-	dep ensure -update
-
 linux-build:
 	env GOOS=linux go build -o $(APP)-linux
 
 compile:
 	go build -o $(APP)
 
-build: build-deps compile fmt
+build: compile fmt
 
 fmt:
 	go fmt $(ALL_PACKAGES)
