@@ -8,14 +8,11 @@ setup:
 	go get -u github.com/golang/lint/golint
 	go get github.com/DATA-DOG/godog/cmd/godog
 	go get -u github.com/go-playground/overalls
-	dep ensure
+	go mod verify
 	@echo " setup complete!! Run make test to run tests"
 
 build-deps:
-	dep ensure
-
-update-deps:
-	dep ensure -update
+	go mod verify
 
 fmt:
 	go fmt $(ALL_PACKAGES)
