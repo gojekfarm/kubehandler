@@ -1,3 +1,4 @@
 vendor/
 out/
 sample-controller/logging-controller
+sample-controller/logging-controller-linux
