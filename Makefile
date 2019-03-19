@@ -5,7 +5,7 @@ ALL_PACKAGES=$(shell go list ./... | grep -v "vendor")
 UNIT_TEST_PACKAGES="."
 
 setup:
-	go get -u github.com/golang/lint/golint
+	go get -u golang.org/x/lint/golint
 	go get github.com/DATA-DOG/godog/cmd/godog
 	go get -u github.com/go-playground/overalls
 	go mod verify
