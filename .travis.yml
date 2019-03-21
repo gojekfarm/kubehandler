@@ -4,5 +4,5 @@ go:
  - 1.12
 
 script:
-  - mkdir -p $(GOPATH)/bin
-  - make
+  - mkdir -p $GOPATH/bin
+  - env GO111MODULE=on make
