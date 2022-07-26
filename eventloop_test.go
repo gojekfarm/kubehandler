@@ -9,11 +9,12 @@ import (
 )
 
 func TestShouldGetResourceVersionFromK8sObjects(t *testing.T) {
+	assert := assert.New(t)
 	var route interface{}
 	route = routev1.Route{ObjectMeta: metav1.ObjectMeta{ResourceVersion: "test"}}
 	assert.NotNil(t, route)
 
 	version, ok := resourceVersion(route)
-	assert.True(t, ok)
-	assert.Equal(t, "test", version)
+	assert.True(ok)
+	assert.Equal("test", version)
 }
