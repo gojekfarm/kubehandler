@@ -1,12 +1,13 @@
 package kubehandler_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/gojektech/kubehandler"
 	"github.com/stretchr/testify/assert"
-	appsv1 "k8s.io/api/extensions/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 )
 
 func TestShouldEnqueueIntoTheUnderlyingWorkQueue(t *testing.T) {
@@ -30,12 +31,12 @@ func TestShouldCallRegisteredAddFuncWhenAddEventIsReceived(t *testing.T) {
 	kind := "Foo"
 	addHandlerCalled := make(chan bool, 1)
 	stopChan := make(chan struct{}, 1)
-	workQueue.RegisterAddHandler(kind, func(namespace, name string) error {
+	workQueue.RegisterAddHandler(kind, func(ctx context.Context, namespace, name string) error {
 		addHandlerCalled <- true
 		return nil
 	})
 	workQueue.EnqueueAdd(kind, &appsv1.Deployment{})
-	go workQueue.Run(1, stopChan)
+	go workQueue.Run(context.TODO(), 1)
 	assert.True(t, <-addHandlerCalled)
 	close(stopChan)
 }
@@ -45,12 +46,12 @@ func TestShouldCallRegisteredUpdateFuncWhenUpdateEventIsReceived(t *testing.T) {
 	kind := "Foo"
 	updateHandlerCalled := make(chan bool, 1)
 	stopChan := make(chan struct{}, 1)
-	workQueue.RegisterUpdateHandler(kind, func(namespace, name string) error {
+	workQueue.RegisterUpdateHandler(kind, func(ctx context.Context, namespace, name string) error {
 		updateHandlerCalled <- true
 		return nil
 	})
 	workQueue.EnqueueUpdate(kind, &appsv1.Deployment{})
-	go workQueue.Run(1, stopChan)
+	go workQueue.Run(context.TODO(), 1)
 	assert.True(t, <-updateHandlerCalled)
 	close(stopChan)
 }
@@ -60,12 +61,12 @@ func TestShouldCallRegisteredDeleteFuncWhenDeleteEventIsReceived(t *testing.T) {
 	kind := "Foo"
 	deleteHandlerCalled := make(chan bool, 1)
 	stopChan := make(chan struct{}, 1)
-	workQueue.RegisterDeleteHandler(kind, func(namespace, name string) error {
+	workQueue.RegisterDeleteHandler(kind, func(ctx context.Context, namespace, name string) error {
 		deleteHandlerCalled <- true
 		return nil
 	})
 	workQueue.EnqueueDelete(kind, &appsv1.Deployment{})
-	go workQueue.Run(1, stopChan)
+	go workQueue.Run(context.TODO(), 1)
 	assert.True(t, <-deleteHandlerCalled)
 	close(stopChan)
 }
