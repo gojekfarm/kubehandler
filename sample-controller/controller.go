@@ -5,14 +5,14 @@ import (
 	"log"
 	"time"
 
-	"github.com/gojektech/kubehandler"
+	kubehandlerv2 "github.com/gojektech/kubehandler/v2"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 type LoggerHandler struct {
-	kubehandler.DefaultHandler
+	kubehandlerv2.DefaultHandler
 }
 
 func (l *LoggerHandler) GetName() string {
@@ -44,14 +44,14 @@ func main() {
 	informer := kubeInformerFactory.Core().V1().Pods().Informer()
 
 	loggingHandler := &LoggerHandler{
-		DefaultHandler: kubehandler.DefaultHandler{
+		DefaultHandler: kubehandlerv2.DefaultHandler{
 			Informer: informer,
 			Synced:   informer.HasSynced,
 		},
 	}
 
 	// This name is used as the workqueue name
-	loop := kubehandler.NewEventLoop("logger_queue")
+	loop := kubehandlerv2.NewEventLoop("logger_queue")
 
 	// Register all your handlers
 	loop.Register(loggingHandler)

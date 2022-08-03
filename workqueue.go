@@ -72,11 +72,11 @@ func (q *workQueue) Run(ctx context.Context, threadiness int) error {
 }
 
 func (q *workQueue) runWorker(ctx context.Context) {
-	out:
+out:
 	for {
 		select {
 		case <-ctx.Done():
-			break out;
+			break out
 		default:
 			q.processNextWorkItem(ctx)
 		}

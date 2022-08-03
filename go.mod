@@ -1,4 +1,4 @@
-module github.com/gojektech/kubehandler
+module github.com/gojektech/kubehandler/v2
 
 go 1.18
 
