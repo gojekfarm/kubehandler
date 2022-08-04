@@ -38,7 +38,6 @@ func main() {
 	// Ignoring some errors for brevity
 	cfg, _ := clientcmd.BuildConfigFromFlags("", "")
 	kubeClient, _ := kubernetes.NewForConfig(cfg)
-	ctx := context.Background()
 	// Get a pod informer
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 	informer := kubeInformerFactory.Core().V1().Pods().Informer()
@@ -58,11 +57,10 @@ func main() {
 
 	// We're not handling signals for clean teardown. For production code, you
 	// probably want to do that
-	// We could also pass the context's done channel as well.
-	stopCh := make(chan struct{})
+	ctx := context.Background()
 
 	// Start the k8s informer so you get events
-	go kubeInformerFactory.Start(stopCh)
+	go kubeInformerFactory.Start(ctx.Done())
 
 	// Start processing events. This can run in a go routine if you want to
 	// continue doing something else.

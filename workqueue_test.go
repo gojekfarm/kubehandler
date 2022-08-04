@@ -30,7 +30,6 @@ func TestShouldCallRegisteredAddFuncWhenAddEventIsReceived(t *testing.T) {
 	workQueue := kubehandlerv2.NewWorkQueue("WorkqueueTest2")
 	kind := "Foo"
 	addHandlerCalled := make(chan bool, 1)
-	stopChan := make(chan struct{}, 1)
 	workQueue.RegisterAddHandler(kind, func(ctx context.Context, namespace, name string) error {
 		addHandlerCalled <- true
 		return nil
@@ -38,35 +37,34 @@ func TestShouldCallRegisteredAddFuncWhenAddEventIsReceived(t *testing.T) {
 	workQueue.EnqueueAdd(kind, &appsv1.Deployment{})
 	go workQueue.Run(context.TODO(), 1)
 	assert.True(t, <-addHandlerCalled)
-	close(stopChan)
 }
 
 func TestShouldCallRegisteredUpdateFuncWhenUpdateEventIsReceived(t *testing.T) {
 	workQueue := kubehandlerv2.NewWorkQueue("WorkqueueTest3")
 	kind := "Foo"
 	updateHandlerCalled := make(chan bool, 1)
-	stopChan := make(chan struct{}, 1)
+	ctx, cancelFunc := context.WithCancel(context.Background())
 	workQueue.RegisterUpdateHandler(kind, func(ctx context.Context, namespace, name string) error {
 		updateHandlerCalled <- true
 		return nil
 	})
 	workQueue.EnqueueUpdate(kind, &appsv1.Deployment{})
-	go workQueue.Run(context.TODO(), 1)
+	go workQueue.Run(ctx, 1)
 	assert.True(t, <-updateHandlerCalled)
-	close(stopChan)
+	cancelFunc()
 }
 
 func TestShouldCallRegisteredDeleteFuncWhenDeleteEventIsReceived(t *testing.T) {
 	workQueue := kubehandlerv2.NewWorkQueue("WorkqueueTest4")
 	kind := "Foo"
 	deleteHandlerCalled := make(chan bool, 1)
-	stopChan := make(chan struct{}, 1)
 	workQueue.RegisterDeleteHandler(kind, func(ctx context.Context, namespace, name string) error {
 		deleteHandlerCalled <- true
 		return nil
 	})
+	ctx, cancelFunc := context.WithCancel(context.Background())
 	workQueue.EnqueueDelete(kind, &appsv1.Deployment{})
-	go workQueue.Run(context.TODO(), 1)
+	go workQueue.Run(ctx, 1)
 	assert.True(t, <-deleteHandlerCalled)
-	close(stopChan)
+	cancelFunc()
 }
