@@ -1,12 +1,11 @@
 package kubehandler
 
 import (
+	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -18,11 +17,11 @@ const (
 )
 
 //WorkQueueHandler defines the contract of a handler function
-type WorkQueueHandler func(namespace, name string) error
+type WorkQueueHandler func(ctx context.Context, namespace, name string) error
 
 //WorkQueue manages the rate limiting interface
 type WorkQueue interface {
-	Run(threadiness int, stopCh <-chan struct{}) error
+	Run(ctx context.Context, threadiness int) error
 	AddSynced(cache.InformerSynced)
 	EnqueueAdd(kind string, obj interface{})
 	EnqueueUpdate(kind string, obj interface{})
@@ -55,41 +54,48 @@ func (q *workQueue) AddSynced(informer cache.InformerSynced) {
 }
 
 //Run is the WorkQueue entry point
-func (q *workQueue) Run(threadiness int, stopCh <-chan struct{}) error {
+func (q *workQueue) Run(ctx context.Context, threadiness int) error {
 	defer runtime.HandleCrash()
 	defer q.shutDown()
 
-	if ok := cache.WaitForCacheSync(stopCh, q.informerSynced...); !ok {
+	if ok := cache.WaitForCacheSync(ctx.Done(), q.informerSynced...); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
 	for i := 0; i < threadiness; i++ {
-		go wait.Until(q.runWorker, time.Second, stopCh)
+		go q.runWorker(ctx)
 	}
 
-	<-stopCh
+	<-ctx.Done()
 
 	return nil
 }
 
-func (q *workQueue) runWorker() {
-	for q.processNextWorkItem() {
+func (q *workQueue) runWorker(ctx context.Context) {
+out:
+	for {
+		select {
+		case <-ctx.Done():
+			break out
+		default:
+			q.processNextWorkItem(ctx)
+		}
 	}
 }
 
-func (q *workQueue) handleAdd(kind, namespace, name string) error {
-	return q.addHandlerMap[kind](namespace, name)
+func (q *workQueue) handleAdd(ctx context.Context, kind, namespace, name string) error {
+	return q.addHandlerMap[kind](ctx, namespace, name)
 }
 
-func (q *workQueue) handleUpdate(kind, namespace, name string) error {
-	return q.updateHandlerMap[kind](namespace, name)
+func (q *workQueue) handleUpdate(ctx context.Context, kind, namespace, name string) error {
+	return q.updateHandlerMap[kind](ctx, namespace, name)
 }
 
-func (q *workQueue) handleDelete(kind, namespace, name string) error {
-	return q.deleteHandlerMap[kind](namespace, name)
+func (q *workQueue) handleDelete(ctx context.Context, kind, namespace, name string) error {
+	return q.deleteHandlerMap[kind](ctx, namespace, name)
 }
 
-func (q *workQueue) syncHandler(key string) error {
+func (q *workQueue) syncHandler(ctx context.Context, key string) error {
 	splitKey := strings.Split(key, ":")
 	eventType, kind, nsKey := splitKey[0], splitKey[1], splitKey[2]
 	namespace, name, err := cache.SplitMetaNamespaceKey(nsKey)
@@ -100,18 +106,18 @@ func (q *workQueue) syncHandler(key string) error {
 
 	switch eventType {
 	case WorkqueueAddEvent:
-		return q.handleAdd(kind, namespace, name)
+		return q.handleAdd(ctx, kind, namespace, name)
 	case WorkqueueUpdateEvent:
-		return q.handleUpdate(kind, namespace, name)
+		return q.handleUpdate(ctx, kind, namespace, name)
 	case WorkqueueDeleteEvent:
-		return q.handleDelete(kind, namespace, name)
+		return q.handleDelete(ctx, kind, namespace, name)
 	default:
 		runtime.HandleError(fmt.Errorf("invalid event type: %s", eventType))
 		return nil
 	}
 }
 
-func (q *workQueue) processNextWorkItem() bool {
+func (q *workQueue) processNextWorkItem(ctx context.Context) bool {
 	obj, shutdown := q.workqueue.Get()
 
 	if shutdown {
@@ -128,7 +134,7 @@ func (q *workQueue) processNextWorkItem() bool {
 			runtime.HandleError(fmt.Errorf("expected string in workqueue but got %#v", obj))
 			return nil
 		}
-		if err := q.syncHandler(key); err != nil {
+		if err := q.syncHandler(ctx, key); err != nil {
 			return fmt.Errorf("error syncing '%s': %s", key, err.Error())
 		}
 		q.workqueue.Forget(obj)

@@ -1,6 +1,10 @@
 package kubehandler
 
-import "k8s.io/client-go/tools/cache"
+import (
+	"context"
+
+	"k8s.io/client-go/tools/cache"
+)
 
 type DefaultHandler struct {
 	Synced   cache.InformerSynced
@@ -18,14 +22,14 @@ func (handler *DefaultHandler) GetInformer() cache.SharedInformer {
 	return handler.Informer
 }
 
-func (handler *DefaultHandler) AddFunc(namespace, name string) error {
+func (handler *DefaultHandler) AddFunc(ctx context.Context, namespace, name string) error {
 	return nil
 }
 
-func (handler *DefaultHandler) UpdateFunc(namespace, name string) error {
+func (handler *DefaultHandler) UpdateFunc(ctx context.Context, namespace, name string) error {
 	return nil
 }
 
-func (handler *DefaultHandler) DeleteFunc(namespace, name string) error {
+func (handler *DefaultHandler) DeleteFunc(ctx context.Context, namespace, name string) error {
 	return nil
 }

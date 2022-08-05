@@ -1,6 +1,7 @@
 package kubehandler
 
 import (
+	"context"
 	"reflect"
 
 	"k8s.io/client-go/tools/cache"
@@ -8,7 +9,7 @@ import (
 
 //EventLoop represents a central EventHandler registry which runs in a loop
 type EventLoop interface {
-	Run(threadiness int, stopCh <-chan struct{}) error
+	Run(ctx context.Context, threadiness int) error
 	Register(handler EventHandler)
 }
 
@@ -16,8 +17,8 @@ type eventLoop struct {
 	workqueue WorkQueue
 }
 
-func (loop *eventLoop) Run(threadiness int, stopCh <-chan struct{}) error {
-	return loop.workqueue.Run(threadiness, stopCh)
+func (loop *eventLoop) Run(ctx context.Context, threadiness int) error {
+	return loop.workqueue.Run(ctx, threadiness)
 }
 
 func (loop *eventLoop) Register(handler EventHandler) {

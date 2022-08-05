@@ -1,16 +1,17 @@
 package kubehandler_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
-	"github.com/gojektech/kubehandler"
+	kubehandlerv2 "github.com/gojektech/kubehandler/v2"
 	"github.com/stretchr/testify/assert"
-	appsv1 "k8s.io/api/extensions/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 )
 
 func TestShouldEnqueueIntoTheUnderlyingWorkQueue(t *testing.T) {
-	workQueue := kubehandler.NewWorkQueue("WorkqueueTest")
+	workQueue := kubehandlerv2.NewWorkQueue("WorkqueueTest")
 	workQueue.EnqueueAdd("someKind", &appsv1.Deployment{})
 	timeCompleted := make(chan string, 1)
 	go func() {
@@ -26,46 +27,44 @@ func TestShouldEnqueueIntoTheUnderlyingWorkQueue(t *testing.T) {
 }
 
 func TestShouldCallRegisteredAddFuncWhenAddEventIsReceived(t *testing.T) {
-	workQueue := kubehandler.NewWorkQueue("WorkqueueTest2")
+	workQueue := kubehandlerv2.NewWorkQueue("WorkqueueTest2")
 	kind := "Foo"
 	addHandlerCalled := make(chan bool, 1)
-	stopChan := make(chan struct{}, 1)
-	workQueue.RegisterAddHandler(kind, func(namespace, name string) error {
+	workQueue.RegisterAddHandler(kind, func(ctx context.Context, namespace, name string) error {
 		addHandlerCalled <- true
 		return nil
 	})
 	workQueue.EnqueueAdd(kind, &appsv1.Deployment{})
-	go workQueue.Run(1, stopChan)
+	go workQueue.Run(context.TODO(), 1)
 	assert.True(t, <-addHandlerCalled)
-	close(stopChan)
 }
 
 func TestShouldCallRegisteredUpdateFuncWhenUpdateEventIsReceived(t *testing.T) {
-	workQueue := kubehandler.NewWorkQueue("WorkqueueTest3")
+	workQueue := kubehandlerv2.NewWorkQueue("WorkqueueTest3")
 	kind := "Foo"
 	updateHandlerCalled := make(chan bool, 1)
-	stopChan := make(chan struct{}, 1)
-	workQueue.RegisterUpdateHandler(kind, func(namespace, name string) error {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	workQueue.RegisterUpdateHandler(kind, func(ctx context.Context, namespace, name string) error {
 		updateHandlerCalled <- true
 		return nil
 	})
 	workQueue.EnqueueUpdate(kind, &appsv1.Deployment{})
-	go workQueue.Run(1, stopChan)
+	go workQueue.Run(ctx, 1)
 	assert.True(t, <-updateHandlerCalled)
-	close(stopChan)
+	cancelFunc()
 }
 
 func TestShouldCallRegisteredDeleteFuncWhenDeleteEventIsReceived(t *testing.T) {
-	workQueue := kubehandler.NewWorkQueue("WorkqueueTest4")
+	workQueue := kubehandlerv2.NewWorkQueue("WorkqueueTest4")
 	kind := "Foo"
 	deleteHandlerCalled := make(chan bool, 1)
-	stopChan := make(chan struct{}, 1)
-	workQueue.RegisterDeleteHandler(kind, func(namespace, name string) error {
+	workQueue.RegisterDeleteHandler(kind, func(ctx context.Context, namespace, name string) error {
 		deleteHandlerCalled <- true
 		return nil
 	})
+	ctx, cancelFunc := context.WithCancel(context.Background())
 	workQueue.EnqueueDelete(kind, &appsv1.Deployment{})
-	go workQueue.Run(1, stopChan)
+	go workQueue.Run(ctx, 1)
 	assert.True(t, <-deleteHandlerCalled)
-	close(stopChan)
+	cancelFunc()
 }
