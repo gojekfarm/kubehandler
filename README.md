@@ -19,13 +19,13 @@ type EventHandler interface {
 	GetName() string
 	GetSynced() cache.InformerSynced
 	GetInformer() cache.SharedInformer
-	AddFunc(namespace, name string) error
-	UpdateFunc(namespace, name string) error
-	DeleteFunc(namespace, name string) error
+	AddFunc(ctx context.Context, namespace, name string) error
+	UpdateFunc(ctx context.Context, namespace, name string) error
+	DeleteFunc(ctx context.Context, namespace, name string) error
 }
 ```
 
-Each of the Add/Update/Delete Funcs receive the namespace and the name of the
+Each of the Add/Update/Delete Funcs receive a context and the namespace and the name of the
 resource that has been modified (or created or deleted).
 `kubehandler.DefaultHandler` implements a DefaultHandler that accepts all
 events and does nothing. In order to make use of this behaviour, you can use
@@ -60,15 +60,18 @@ Finally, run the EventLoop.
 
 ```
 	threadiness := 2
-	stopCh := make(chan struct{})
+	ctx := context.Background()
 
-	loop.Run(threadiness, stopCh)
+	loop.Run(ctx, threadiness)
 ```
 
-You may use the channel passed in to `EventLoop.Run` to stop the EventLoop.
+You may use the context passed in to `EventLoop.Run` to stop the EventLoop.
 
 ```
-	close(stopCh)
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	loop.Run(ctx, threadiness)
+
+	cancelFunc()
 ```
 
 ## DefaultHandler
@@ -85,7 +88,10 @@ Returns defaultHandler.Informer
 
 The following functions are no-ops.
 ```
-AddFunc(namespace, name string) error
-UpdateFunc(namespace, name string) error
-DeleteFunc(namespace, name string) error
+AddFunc(ctx context.Context, namespace, name string) error
+UpdateFunc(ctx context.Context, namespace, name string) error
+DeleteFunc(ctx context.Context, namespace, name string) error
 ```
+
+Note: The current module supports Kubernetes 1.22 and above.
+Kubernetes 1.21 and lower compatible module can be found in branch v0.
